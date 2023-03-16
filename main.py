@@ -22,13 +22,13 @@ opts = Options()
 # opts.set_headless()
 browser = Chrome(options=opts)
 
-rows_of_interest = {
-    "contratto", "tipologia", "superficie", "locali", "piano", "totale piani edificio", "altre caratteristiche", "prezzo", "spese condominio", "anno di costruzione", "stato", "riscaldamento", "climatizzatore", "efficienza energetica"
-}
+rows_of_interest = ["contratto", "tipologia", "superficie", "locali", "piano", "totale piani edificio", "altre caratteristiche",
+                    "prezzo", "spese condominio", "anno di costruzione", "stato", "riscaldamento", "climatizzatore", "efficienza energetica"]
 
 
 def fetch_info_from(link: str):
     print("NEW LINK TO EXPLORE:", link)
+    rows_of_interest_set = set(rows_of_interest)
     result = collections.defaultdict(lambda: None)
     try:
         browser.get(link)
@@ -41,7 +41,7 @@ def fetch_info_from(link: str):
             values = info.find_elements(
                 By.TAG_NAME, 'dd')
             for i, key in enumerate(keys):
-                if key.text.lower() in rows_of_interest:
+                if key.text.lower() in rows_of_interest_set:
                     result[key.text.lower()] = values[i].text
         return result
     except Exception as e:
