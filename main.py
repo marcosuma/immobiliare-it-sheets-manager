@@ -73,6 +73,7 @@ def main():
 
     try:
         links = []
+        rows_to_write = []
         service = build('sheets', 'v4', credentials=creds)
 
         # Call the Sheets API
@@ -86,26 +87,36 @@ def main():
             print('No data found.')
             return
 
-        for row in values:
-            if len(row) == 1:
-                links.append(row[0])
+        # TODO: Write here the first row...
+        # rows_to_write.append(list(rows_of_interest))
 
-        rows_to_write = []
-        rows_to_write.append(list(rows_of_interest))
-        for link in links:
+        for i, row in enumerate(values):
+            if len(row) > 1:
+                continue
+            links.append(row[0])
+            link = row[0]
             info = fetch_info_from(link)
-            row = []
+            row_to_write = [link]
             for col in list(rows_of_interest):
-                row.append(info[col])
-            rows_to_write.append(row)
-        RANGE_NAME = 'March 2023!B:Z'
-        VALUE_INPUT_OPTION = 'USER_ENTERED'
-        body = {
-            'values': rows_to_write
-        }
-        result = service.spreadsheets().values().update(
-            spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME,
-            valueInputOption=VALUE_INPUT_OPTION, body=body).execute()
+                row_to_write.append(info[col])
+            rows_to_write.append(row_to_write)
+
+            # Now we write the i-th + 1 row
+            row_range = 'March 2023!${0}:${1}'.format(i+2, i+2)
+            value_input_option = 'USER_ENTERED'
+
+            print("processing link:", link, "and writing row:",
+                  i, "with data:", row_to_write)
+
+            body = {
+                'values': [row_to_write]
+            }
+            result = service.spreadsheets().values().update(
+                spreadsheetId=SPREADSHEET_ID, range=row_range,
+                valueInputOption=value_input_option, body=body).execute()
+
+        print("The following links where processed successfully:", links)
+        print("The following data was used to update the correspoding rows:", rows_to_write)
 
     except HttpError as err:
         print(err)
