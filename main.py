@@ -13,17 +13,33 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 # If modifying these scopes, delete the file token.json.
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
 # The ID and range of a sample spreadsheet.
-SPREADSHEET_ID = '1uY8Emah4pRujX4hcfmcgG9rkj-MIGqisutmdZJ5IEZc'
+SPREADSHEET_ID = "1uY8Emah4pRujX4hcfmcgG9rkj-MIGqisutmdZJ5IEZc"
+
+SHEET_NAME = "June 2023"
 
 opts = Options()
 # opts.set_headless()
 browser = Chrome(options=opts)
 
-rows_of_interest = ["contratto", "tipologia", "superficie", "locali", "piano", "totale piani edificio", "altre caratteristiche",
-                    "prezzo", "spese condominio", "anno di costruzione", "stato", "riscaldamento", "climatizzatore", "efficienza energetica"]
+rows_of_interest = [
+    "contratto",
+    "tipologia",
+    "superficie",
+    "locali",
+    "piano",
+    "totale piani edificio",
+    "altre caratteristiche",
+    "prezzo",
+    "spese condominio",
+    "anno di costruzione",
+    "stato",
+    "riscaldamento",
+    "climatizzatore",
+    "efficienza energetica",
+]
 
 
 def fetch_info_from(link: str):
@@ -33,13 +49,12 @@ def fetch_info_from(link: str):
     try:
         browser.get(link)
 
-        other_infos = browser.find_elements(By.CSS_SELECTOR,
-                                            'dl.in-realEstateFeatures__list')
+        other_infos = browser.find_elements(
+            By.CSS_SELECTOR, "dl.in-realEstateFeatures__list"
+        )
         for i, info in enumerate(other_infos):
-            keys = info.find_elements(
-                By.TAG_NAME, 'dt')
-            values = info.find_elements(
-                By.TAG_NAME, 'dd')
+            keys = info.find_elements(By.TAG_NAME, "dt")
+            values = info.find_elements(By.TAG_NAME, "dd")
             for i, key in enumerate(keys):
                 if key.text.lower() in rows_of_interest_set:
                     result[key.text.lower()] = values[i].text
@@ -57,34 +72,34 @@ def main():
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'credentials.json', SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open("token.json", "w") as token:
             token.write(creds.to_json())
 
     try:
         links = []
         rows_to_write = []
-        service = build('sheets', 'v4', credentials=creds)
+        service = build("sheets", "v4", credentials=creds)
 
         # Call the Sheets API
         sheet = service.spreadsheets()
-        RANGE_NAME = 'March 2023!A2:B'
-        result = sheet.values().get(spreadsheetId=SPREADSHEET_ID,
-                                    range=RANGE_NAME).execute()
-        values = result.get('values', [])
+        RANGE_NAME = SHEET_NAME + "!A2:B"
+        result = (
+            sheet.values().get(spreadsheetId=SPREADSHEET_ID, range=RANGE_NAME).execute()
+        )
+        values = result.get("values", [])
 
         if not values:
-            print('No data found.')
+            print("No data found.")
             return
 
         # TODO: Write here the first row...
@@ -102,25 +117,40 @@ def main():
             rows_to_write.append(row_to_write)
 
             # Now we write the i-th + 1 row
-            row_range = 'March 2023!${0}:${1}'.format(i+2, i+2)
-            value_input_option = 'USER_ENTERED'
+            row_range = "{0}!${1}:${2}".format(SHEET_NAME, i + 2, i + 2)
+            value_input_option = "USER_ENTERED"
 
-            print("processing link:", link, "and writing row:",
-                  i, "with data:", row_to_write)
+            print(
+                "processing link:",
+                link,
+                "and writing row:",
+                i,
+                "with data:",
+                row_to_write,
+            )
 
-            body = {
-                'values': [row_to_write]
-            }
-            result = service.spreadsheets().values().update(
-                spreadsheetId=SPREADSHEET_ID, range=row_range,
-                valueInputOption=value_input_option, body=body).execute()
+            body = {"values": [row_to_write]}
+            result = (
+                service.spreadsheets()
+                .values()
+                .update(
+                    spreadsheetId=SPREADSHEET_ID,
+                    range=row_range,
+                    valueInputOption=value_input_option,
+                    body=body,
+                )
+                .execute()
+            )
 
         print("The following links where processed successfully:", links)
-        print("The following data was used to update the correspoding rows:", rows_to_write)
+        print(
+            "The following data was used to update the correspoding rows:",
+            rows_to_write,
+        )
 
     except HttpError as err:
         print(err)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
