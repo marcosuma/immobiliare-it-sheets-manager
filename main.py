@@ -39,6 +39,8 @@ rows_of_interest = [
     "riscaldamento",
     "climatizzatore",
     "efficienza energetica",
+    "quartiere",
+    "indirizzo",
 ]
 
 
@@ -52,6 +54,22 @@ def fetch_info_from(link: str):
         other_infos = browser.find_elements(
             By.CSS_SELECTOR, "dl.in-realEstateFeatures__list"
         )
+        try:
+            neighbourood = browser.find_element(
+                By.CSS_SELECTOR, 'a[href="#mappa"] span:nth-child(2)'
+            )
+        except:
+            result["quartiere"] = "N/A"
+        else:
+            result["quartiere"] = neighbourood.text
+        try:
+            address = browser.find_element(
+                By.CSS_SELECTOR, 'a[href="#mappa"] span:nth-child(3)'
+            )
+        except:
+            result["indirizzo"] = ""
+        else:
+            result["indirizzo"] = address.text
         for i, info in enumerate(other_infos):
             keys = info.find_elements(By.TAG_NAME, "dt")
             values = info.find_elements(By.TAG_NAME, "dd")
