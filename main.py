@@ -18,7 +18,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 # The ID and range of a sample spreadsheet.
 SPREADSHEET_ID = "1uY8Emah4pRujX4hcfmcgG9rkj-MIGqisutmdZJ5IEZc"
 
-SHEET_NAME = "June 2023"
+SHEET_NAME = "Aug 2023"
 
 opts = Options()
 # opts.set_headless()
@@ -41,6 +41,9 @@ rows_of_interest = [
     "efficienza energetica",
     "quartiere",
     "indirizzo",
+    "mq",
+    "costo / mq",
+    "nuda prorieta",
 ]
 
 
@@ -76,6 +79,13 @@ def fetch_info_from(link: str):
             for i, key in enumerate(keys):
                 if key.text.lower() in rows_of_interest_set:
                     result[key.text.lower()] = values[i].text
+        result["mq"] = int(result["superficie"].split(" ")[0])
+        result["prezzo"] = int(result["prezzo"].split(" ")[1].split(".")[0]) * 1000
+        result["costo / mq"] = result["prezzo"] / result["mq"]
+
+        description = browser.find_element(By.CLASS_NAME, "in-readAll")
+        result["nuda prorieta"] = "nuda " in str(description.text).lower()
+
         return result
     except Exception as e:
         print(e)
